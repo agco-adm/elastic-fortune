@@ -275,7 +275,7 @@ describe('aggregations', function () {
         });
     });
 
-    describe('Sampling', function() {
+    describe.skip('Sampling', function() {
         beforeEach(function() {
             this.timeout(config.esIndexWaitTime + 10000);
             return seeder(this.harvesterApp).dropCollections('people')
