@@ -5,7 +5,7 @@ services:
 - elasticsearch
 before_script:
   - 'echo "script.disable_dynamic: false" | sudo tee -a /etc/elasticsearch/elasticsearch.yml'
-  - cat /etc/elasticsearch/elasticsearch.yml
+  - sudo service elasticsearch restart
   - mkdir testdb
   - mongod --port 27017 --dbpath testdb --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
   - sleep 3
