@@ -4,6 +4,7 @@ node_js:
 services:
 - elasticsearch
 before_script:
+  - 'echo "script.disable_dynamic: false" | sudo tee -a /etc/elasticsearch/elasticsearch.yml'
   - mkdir testdb
   - mongod --port 27017 --dbpath testdb --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
   - sleep 3
