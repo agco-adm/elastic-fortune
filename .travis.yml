@@ -2,7 +2,9 @@ language: node_js
 node_js:
   - '0.10'
 before_script:
-  - 'echo "script.disable_dynamic: false\n script.disable_dynamic: sandbox\n script.default_lang: expression\n script.groovy.sandbox.enabled: false" | sudo tee -a /etc/elasticsearch/elasticsearch.yml'
+  - 'echo "script.disable_dynamic: sandbox" | sudo tee -a /etc/elasticsearch/elasticsearch.yml'
+  - 'echo "script.default_lang: expression" | sudo tee -a /etc/elasticsearch/elasticsearch.yml'
+  - 'echo "script.groovy.sandbox.enabled: false" | sudo tee -a /etc/elasticsearch/elasticsearch.yml'
   - cat /etc/elasticsearch/elasticsearch.yml
   - sudo service elasticsearch start
   - mkdir testdb
