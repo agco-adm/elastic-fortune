@@ -1325,18 +1325,9 @@ function getCollectionLookup(harvest_app,type){
             !linkedSchemas[propertyName] && harvest_app._schema[propertyValue] && (linkedSchemas[propertyName]=true) && getLinkedSchemas(harvest_app._schema[propertyValue]);
         }
         _.each(startingSchema,function(property,propertyName){
-
-            if([typeof property]!="function") {
-                if(_.isString(property)) {
-                    setValueAndGetLinkedSchemas(propertyName,property);
-                }else if (_.isArray(property)){
-                    if(_.isString(property[0])){
-                        setValueAndGetLinkedSchemas(propertyName,property[0]);
-                    }else{
-                        setValueAndGetLinkedSchemas(propertyName,property[0].ref);
-                    }
-                }else if (_.isObject(property) && !(property.baseUri)){
-                    setValueAndGetLinkedSchemas(propertyName,property.ref);
+            function handleObjects(property) {
+                if (_.isObject(property) && !(property.baseUri)) {
+                    setValueAndGetLinkedSchemas(propertyName, property.ref);
                 } else if (_.isObject(property) && (property.baseUri)) {
                     setValueAndGetLinkedSchemas(propertyName, {
                         getRef: function () {
@@ -1345,6 +1336,19 @@ function getCollectionLookup(harvest_app,type){
                             return property.baseUri;
                         }
                     });
+                }
+            }
+            if([typeof property]!="function") {
+                if(_.isString(property)) {
+                    setValueAndGetLinkedSchemas(propertyName,property);
+                }else if (_.isArray(property)){
+                    if(_.isString(property[0])){
+                        setValueAndGetLinkedSchemas(propertyName,property[0]);
+                    } else {
+                        handleObjects(property[0]);
+                    }
+                } else {
+                    handleObjects(property)
                 }
             }
         });
