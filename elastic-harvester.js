@@ -1279,6 +1279,70 @@ ElasticHarvest.prototype.sync = function(model){
     });
 };
 
+//expandBulkAndSync: will expand all links in the model, then push it to elastic search.
+//Works with an array of models.
+ElasticHarvest.prototype.expandBulkAndSync = function (models) {
+  // console.log('my models', models);
+  var _this = this;
+  if (!_.isArray(models)) return _this.expandAndSync(models);
+
+  return Promise.each(models, function(model) {
+    return Promise.resolve(_this.expandEntity(model));
+  })
+  .then(function(result) {
+    return _this.bulkSync(result);
+  });
+}
+
+ElasticHarvest.prototype.bulkSync = function(aModels) {
+  //rename it to builkModel
+  console.log('bulkSync-->my models', aModels);
+  model = _.join(aModels, '\n');
+  // console.log('bulkSync-->my model', model);
+  model = _.cloneDeep(model);
+  model._lastUpdated = new Date().getTime();
+  var esBody = JSON.stringify(model);
+  console.log('bulkSync-->my strignfifys %s', esBody);
+  var _this = this;
+  var routing = getRouting(_this)
+  var options = {
+    uri: this.es_url + '/' + this.index + '/' + this.type +'/' + model.id + routing,
+    body: esBody,
+    pool:postPool
+  };
+
+  function getRouting(options) {
+    if (!options.pathToCustomRoutingKey) return '' // custom routing not enabled
+    var value = Util.getProperty(model, options.pathToCustomRoutingKey);
+    console.log('my routing value,', value);
+    if (value) {
+      return '?routing=' + value;
+    } else {
+      console.error('Routing Key required, but not available:',
+        _this.type, options.pathToCustomRoutingKey,
+        JSON.stringify(model, null, 2))
+      return '';
+    }
+  }
+
+  return new Promise(function (resolve, reject) {
+    request.put(options, function (error, response, body) {
+      body = JSON.parse(body);
+      if (error || body.error) {
+        var errMsg = error?error.message?error.message:JSON.stringify(error):JSON.stringify(body.error);
+        console.warn("[Elastic-Harvest] es_sync failed on model " + model.id + " :",errMsg);
+        reject(error || body);
+      } else {
+        resolve(model);
+      }
+    });
+  })
+  .catch(function (error) {
+      throw new Error(_this.type+ " "+ (model.id ? model.id : "") +
+        " was unable to be added to the elastic search index. This likely means that one or more links were unable to be found.");
+  });
+};
+
 function depthIsInScope(options,depth,currentPath){
     if(depth>options.graphDepth.default)
         return false;
