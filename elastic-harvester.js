@@ -1319,10 +1319,10 @@ ElasticHarvest.prototype.bulkSync = function(aModels, routingKey) {
   return new Promise(function (resolve, reject) {
     request.put(options, function (error, response, body) {
       body = JSON.parse(body);
-      if (error || body.error) {
-        var errMsg = error?error.message?error.message:JSON.stringify(error):JSON.stringify(body.error);
+      if (error || body.error || body.errors) {
+        var errMsg = body.errors ? JSON.stringify(response.body) : JSON.stringify(body.items);
         console.warn("[Elastic-Harvest] es_sync failed on " + routingKey + " :",errMsg);
-        reject(error || body);
+        reject(response.body || body.items);
       } else {
         resolve(esBodyModel);
       }
