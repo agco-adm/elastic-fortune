@@ -15,7 +15,6 @@ var seeder = require('./seeder')
 var Promise = require('bluebird')
 var ElasticHarvest = require('../elastic-harvester')
 var testUtils = require('./util');
-var should = require('should');
 
 var syncWaitTime = 1000  // milliseconds
 

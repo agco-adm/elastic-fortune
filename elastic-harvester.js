@@ -1284,7 +1284,7 @@ ElasticHarvest.prototype.sync = function(model){
 ElasticHarvest.prototype.expandBulkAndSync = function (models, routingKey) {
   var _this = this;
   if (!_.isArray(models)) return _this.expandAndSync(models);
-  if(_.isEmpty(routingKey)) console.error('Routing Key required, but not available:');
+  if(_.isEmpty(routingKey)) return console.error('Routing Key required, but not available:');
 
   return Promise.each(models, function(model) {
     return Promise.resolve(_this.expandEntity(model));
