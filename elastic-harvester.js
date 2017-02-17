@@ -1279,6 +1279,62 @@ ElasticHarvest.prototype.sync = function(model){
     });
 };
 
+//expandBulkAndSync: will expand all links in the model, then push it to elastic search.
+//Works with an array of models.
+ElasticHarvest.prototype.expandBulkAndSync = function (models, routingKey) {
+  var _this = this;
+  if (!_.isArray(models)) return _this.expandAndSync(models);
+  if(_.isEmpty(routingKey)) return console.error('Routing Key required, but not available:');
+
+  return Promise.each(models, function(model) {
+    return Promise.resolve(_this.expandEntity(model));
+  })
+  .then(function(result) {
+    return _this.bulkSync(result, routingKey);
+  });
+}
+
+ElasticHarvest.prototype.bulkSync = function(aModels, routingKey) {
+  var _this = this;
+  var esBodyModel = '';
+  _.each(aModels, function(model) {
+    var header = {
+      index: {
+        _index: _this.index,
+        _type: _this.type,
+        _id: model.id,
+        _routing: routingKey
+      }
+    }
+    esBodyModel += JSON.stringify(header) + '\n'
+    esBodyModel += JSON.stringify(model) + '\n';
+  });
+
+  var options = {
+    uri: this.es_url + '/'+this.index+'/'+this.type + '/_bulk',
+    body: esBodyModel,
+    pool: postPool
+  };
+
+  return new Promise(function (resolve, reject) {
+    request.put(options, function (error, response, body) {
+      body = JSON.parse(body);
+      if (error || body.error || body.errors) {
+        var errMsg = body.errors ? JSON.stringify(response.body) : JSON.stringify(body.items);
+        console.warn("[Elastic-Harvest] es_sync failed on " + routingKey + " :",errMsg);
+        reject(response.body || body.items);
+      } else {
+        resolve(esBodyModel);
+      }
+    });
+  })
+  .catch(function (error) {
+      throw new Error(routingKey + '/' + _.first(aModels) +
+        " was unable to be added to the elastic search index." +
+        " This likely means that one or more links were unable to be found.", error);
+  });
+};
+
 function depthIsInScope(options,depth,currentPath){
     if(depth>options.graphDepth.default)
         return false;
